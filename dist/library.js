@@ -39,7 +39,10 @@ class JsonPlaceholderReplacer {
         return this;
     }
     replace(json) {
-        return this.replaceChildren(json);
+        return this.replaceChildren(json, this.variablesMap);
+    }
+    replaceWith(json, ...variablesMap) {
+        return this.replaceChildren(json, variablesMap);
     }
     initializeOptions(options) {
         var _a;
@@ -60,24 +63,24 @@ class JsonPlaceholderReplacer {
         }
         return { defaultValueSeparator, delimiterTags, nullishValues };
     }
-    replaceChildren(node) {
+    replaceChildren(node, variablesMap) {
         for (const key in node) {
             const attribute = node[key];
             if (typeof attribute === "object") {
-                node[key] = this.replaceChildren(attribute);
+                node[key] = this.replaceChildren(attribute, variablesMap);
             }
             else if (attribute !== undefined) {
-                node[key] = this.replaceValue(attribute);
+                node[key] = this.replaceValue(attribute, variablesMap);
             }
         }
         return node;
     }
-    replaceValue(node) {
+    replaceValue(node, variablesMap) {
         const attributeAsString = node.toString();
         const placeHolderIsInsideStringContext = !this.delimiterTagsRegex.test(node);
         const output = this.configuration.delimiterTags.reduce((acc, delimiterTag) => {
             const regex = new RegExp(`(${delimiterTag.escapedBeginning}[^${delimiterTag.escapedEnding}]+${delimiterTag.escapedEnding})`, "g");
-            return acc.replace(regex, this.replacer(placeHolderIsInsideStringContext)(delimiterTag));
+            return acc.replace(regex, this.replacer(placeHolderIsInsideStringContext, variablesMap)(delimiterTag));
         }, attributeAsString);
         try {
             if (output === attributeAsString) {
@@ -89,10 +92,10 @@ class JsonPlaceholderReplacer {
             return output;
         }
     }
-    replacer(placeHolderIsInsideStringContext) {
+    replacer(placeHolderIsInsideStringContext, variablesMap) {
         return (delimiterTag) => (placeHolder) => {
             const { tag, defaultValue } = this.parseTag(placeHolder, delimiterTag);
-            const mapCheckResult = this.checkInEveryMap(tag);
+            const mapCheckResult = this.checkInEveryMap(tag, variablesMap);
             if (mapCheckResult === undefined) {
                 if (defaultValue !== undefined) {
                     return defaultValue;
@@ -121,10 +124,10 @@ class JsonPlaceholderReplacer {
         }
         return { tag, defaultValue };
     }
-    checkInEveryMap(path) {
+    checkInEveryMap(path, variablesMap) {
         const { nullishValues } = this.configuration;
         let result;
-        this.variablesMap.forEach((map) => {
+        variablesMap.forEach((map) => {
             let value = this.navigateThroughMap(map, path);
             if (value !== undefined && nullishValues.includes(value)) {
                 value = undefined;

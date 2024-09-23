@@ -9,14 +9,16 @@ export interface Configuration {
     defaultValueSeparator: string;
     nullishValues: (boolean | number | string | null)[];
 }
+type VariableMap = Record<string, unknown>;
 export declare class JsonPlaceholderReplacer {
     private readonly variablesMap;
     private readonly configuration;
     private readonly delimiterTagsRegex;
     constructor(options?: Partial<Configuration>);
-    addVariableMap(variableMap: Record<string, unknown> | string): JsonPlaceholderReplacer;
-    setVariableMap(...variablesMap: (Record<string, unknown> | string)[]): JsonPlaceholderReplacer;
+    addVariableMap(variableMap: VariableMap | string): JsonPlaceholderReplacer;
+    setVariableMap(...variablesMap: (VariableMap | string)[]): JsonPlaceholderReplacer;
     replace(json: object): object;
+    replaceWith(json: object, ...variablesMap: VariableMap[]): object;
     private initializeOptions;
     private replaceChildren;
     private replaceValue;
@@ -25,3 +27,4 @@ export declare class JsonPlaceholderReplacer {
     private checkInEveryMap;
     private navigateThroughMap;
 }
+export {};
